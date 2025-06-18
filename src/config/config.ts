@@ -69,6 +69,7 @@ export function buildConfig(cfg: WorkspaceConfiguration) {
       true,
     ),
     jumpToLineEndings: cfg.get('finder.jumpToLineEndings', true),
+    jumpToEndOfWord: cfg.get('finder.jumpToEndOfWord', false),
   };
 
   config.dim = {

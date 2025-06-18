@@ -4,4 +4,5 @@ export class FinderConfig {
   public onlyInitialLetter = true;
   public includeEndCharInSelection = true;
   public jumpToLineEndings = false;
+  public jumpToEndOfWord = false;
 }

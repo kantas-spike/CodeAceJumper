@@ -82,10 +82,34 @@ export class Jumper {
             new Position(placeholder.line, placeholder.character + offset),
           );
         } else {
-          editor.selection = new Selection(
-            new Position(placeholder.line, placeholder.character),
-            new Position(placeholder.line, placeholder.character),
-          );
+          // Add jump to end of word if the setting is enabled
+          if (this.config.finder.jumpToEndOfWord) {
+            const line = editor.document.lineAt(placeholder.line);
+            const lineText = line.text;
+            let endOfWordPos = placeholder.character;
+            const finderPatternRegex = new RegExp(this.config.finder.pattern);
+            
+            const punctuationPattern = /[[\](){}<>.,;:!?'"\/\-_=+`~@#$%^&*|\\]/;
+            
+            // Find the end of the current word
+            for (let i = placeholder.character + 1; i <= lineText.length; i++) {
+              if (i === lineText.length || punctuationPattern.test(lineText[i]) || finderPatternRegex.test(lineText[i])) {
+                endOfWordPos = i;
+                break;
+              }
+            }
+    
+            
+            editor.selection = new Selection(
+              new Position(placeholder.line, endOfWordPos),
+              new Position(placeholder.line, endOfWordPos),
+            );
+          } else {
+            editor.selection = new Selection(
+              new Position(placeholder.line, placeholder.character),
+              new Position(placeholder.line, placeholder.character),
+            );
+          }
         }
         await this.scrollToLine(placeholder.line);
 
@@ -142,10 +166,21 @@ export class Jumper {
             new Position(placeholder.line, placeholder.character),
           );
         } else {
-          editor.selection = new Selection(
-            new Position(placeholder.line, placeholder.character),
-            new Position(placeholder.line, placeholder.character),
-          );
+          // Adding in end of word changes here as well for consistancy
+          if (this.config.finder.jumpToEndOfWord) {
+            const line = editor.document.lineAt(placeholder.line);
+            const endOfLinePos = line.range.end.character;
+            
+            editor.selection = new Selection(
+              new Position(placeholder.line, endOfLinePos),
+              new Position(placeholder.line, endOfLinePos),
+            );
+          } else {
+            editor.selection = new Selection(
+              new Position(placeholder.line, placeholder.character),
+              new Position(placeholder.line, placeholder.character),
+            );
+          }
         }
         await this.scrollToLine(placeholder.line);
 

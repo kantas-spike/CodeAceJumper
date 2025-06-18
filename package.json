@@ -124,6 +124,11 @@
         "aceJump.finder.jumpToLineEndings": {
           "type": "boolean",
           "default": false
+        },
+        "aceJump.finder.jumpToEndOfWord": {
+        "type": "boolean",
+        "default": false,
+        "description": "Jump to the end of the word instead of the beginning"
         }
       }
     }
@@ -135,7 +140,6 @@
     "compile": "webpack --mode development",
     "watch": "webpack --mode development --watch",
     "test-compile": "tsc -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run test-compile && node ./node_modules/vscode/bin/test",
     "lint": "eslint --max-warnings=0 ./src/**/*.ts",
     "prettier": "prettier --check ./src/**/*.ts",
