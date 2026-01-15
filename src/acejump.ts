@@ -49,6 +49,15 @@ export class AceJump {
       }),
     );
 
+    context.subscriptions.push(
+      commands.registerCommand('extension.aceJump.switchFinderMode', async () => {
+        try {
+          this.jumper.switchFinderMode();
+          // tslint:disable-next-line:no-empty
+        } catch (_) {}
+      }),
+    );
+
     workspace.onDidChangeConfiguration(this.loadConfig);
     this.loadConfig();
   }

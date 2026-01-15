@@ -11,347 +11,1230 @@ describe('AreaIndexFinder', () => {
   let editorBuilder: EditorBuilder;
   let config: Config;
 
-  before(() => {
-    editorBuilder = new EditorBuilder();
+  describe('in char mode', () => {
+    before(() => {
+      editorBuilder = new EditorBuilder();
 
-    sut = new AreaIndexFinder();
+      sut = new AreaIndexFinder();
 
-    config = new Config();
-    sut.refreshConfig(config);
-  });
+      config = new Config();
+      sut.refreshConfig(config);
+    });
 
-  after(() => {
-    editorBuilder.restore();
-  });
+    after(() => {
+      editorBuilder.restore();
+    });
 
-  describe('findByChar', () => {
-    it('should find nothing with no char', () => {
-      // given
-      const editor = editorBuilder.withLines('my first row').build();
+    describe('findByChar', () => {
+      it('should find nothing with no char', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'char');
+        const editor = editorBuilder.withLines('my first row').build();
 
-      // when
-      const result = sut.findByChar(editor, new JumpArea([[0, 0]]), '');
+        // when
+        const result = sut.findByChar(editor, new JumpArea([[0, 0]]), '');
 
-      // then
-      assert.deepEqual(result, {
-        count: 0,
-        highlightCount: 0,
-        indexes: { 0: [] },
+        // then
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.deepEqual(result, {
+          count: 0,
+          highlightCount: 0,
+          indexes: { 0: [] },
+        });
+      });
+
+      describe('when config has onlyInitialLetter true', () => {
+        before(() => {
+          config.finder.onlyInitialLetter = true;
+          sut.refreshConfig(config);
+        });
+
+        it('should find values matching initial letter with given char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines('my first row', 'class a {}', 'myAbsoluteMethod')
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 0: [], 1: [6], 2: [] },
+          });
+        });
+
+        it('should find values matching initial letter with given uppercase char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder.withLines('class a {}').build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 0: [6] },
+          });
+        });
+
+        it('should find values matching initial uppercase letter with given char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder.withLines('class A {}').build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 0: [6] },
+          });
+        });
+
+        it('should skip rows with given area', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines('class a {}', 'class a {}', 'class a {}')
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 1: [6] },
+          });
+        });
+
+        it('should find values matching initial letter with given char and all config finder pattern', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines(`[a ,a -a .a {a _a (a "a 'a <a [a ]a`)
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 11,
+            highlightCount: 0,
+            indexes: { 0: [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31] },
+          });
+        });
+
+        it('should find values matching initial letter with given char with complex example', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines(
+              `public abstract class my-amazing-class (private absolute: string, public _abs: !Abs)`,
+              `{ if(_abs) { return "abs"; else { return 'absolute' } } }`,
+            )
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 7,
+            highlightCount: 0,
+            indexes: { 0: [7, 25, 48, 74], 1: [6, 21, 42] },
+          });
+        });
+      });
+
+      describe('when config has onlyInitialLetter false', () => {
+        before(() => {
+          config.finder.onlyInitialLetter = false;
+          sut.refreshConfig(config);
+        });
+
+        it('should find values matching any letter with given char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines('my first row', 'class a {}', 'myAbsoluteMethod')
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 3,
+            highlightCount: 0,
+            indexes: { 0: [], 1: [2, 6], 2: [2] },
+          });
+        });
+
+        it('should find values matching any letter with given uppercase char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder.withLines('myabsolutemethod').build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 0: [2] },
+          });
+        });
+
+        it('should find values matching any uppercase letter with given char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder.withLines('myAbsoluteMethod').build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 0: [2] },
+          });
+        });
+
+        it('should skip rows with given area', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines(
+              'myAbsoluteMethod',
+              'myAbsoluteMethod',
+              'myAbsoluteMethod',
+            )
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 1,
+            highlightCount: 0,
+            indexes: { 1: [2] },
+          });
+        });
+
+        it('should find values matching any letter with given with complex example', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines(
+              `public abstract class my-amazing-class (private absolute: string, public _abs: !Abs)`,
+              `{ if(_abs) { return "abs"; else { return 'absolute' } } }`,
+            )
+            .build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 13,
+            highlightCount: 0,
+            indexes: {
+              0: [7, 12, 18, 25, 27, 35, 44, 48, 74, 80],
+              1: [6, 21, 42],
+            },
+          });
+        });
+
+        it('should find values matching any letter with given char and multiple jump areas', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'char');
+          const editor = editorBuilder
+            .withLines(
+              'my first row',
+              'class a {}',
+              'empty',
+              'empty',
+              'empty',
+              'myAbsoluteMethod',
+            )
+            .build();
+
+          // when
+          const result = sut.findByChar(
+            editor,
+            new JumpArea([
+              [0, 1],
+              [5, 5],
+            ]),
+            'a',
+          );
+
+          // then
+          assert.equal(sut['config'].finderMode, 'char');
+          assert.deepEqual(result, {
+            count: 3,
+            highlightCount: 0,
+            indexes: { 0: [], 1: [2, 6], 5: [2] },
+          });
+        });
       });
     });
 
-    describe('when config has onlyInitialLetter true', () => {
+    describe('restrictByChar', () => {
+      it('should restrict nothing with no char', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'char');
+        const editor = editorBuilder.withLines('my first row').build();
+        const previousLineIndexes: LineIndexes = {
+          count: 1,
+          highlightCount: 0,
+          indexes: { 0: [0] },
+        };
+
+        // when
+        const result = sut.restrictByChar(editor, previousLineIndexes, '');
+
+        // then
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.deepEqual(result, {
+          count: 0,
+          highlightCount: 1,
+          indexes: { 0: [] },
+        });
+      });
+
+      it('should not restrict if all indexes have next letter matching the given char', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'char');
+        const editor = editorBuilder
+          .withLines('class a cliss b cluss c')
+          .build();
+        const previousLineIndexes: LineIndexes = {
+          count: 3,
+          highlightCount: 0,
+          indexes: { 0: [0, 8, 16] },
+        };
+
+        // when
+        const result = sut.restrictByChar(editor, previousLineIndexes, 'l');
+
+        // then
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.deepEqual(result, {
+          count: 3,
+          highlightCount: 1,
+          indexes: { 0: [0, 8, 16] },
+        });
+      });
+
+      it('should restrict and put -1 as index', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'char');
+        const editor = editorBuilder.withLines('lass a cliss b luss c').build();
+        const previousLineIndexes: LineIndexes = {
+          count: 1,
+          highlightCount: 0,
+          indexes: { 0: [7] },
+        };
+
+        // when
+        const result = sut.restrictByChar(editor, previousLineIndexes, 'z');
+
+        // then
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.deepEqual(result, {
+          count: 0,
+          highlightCount: 1,
+          indexes: { 0: [-1] },
+        });
+      });
+
+      it('should restrict to one if only index hass next letter matching the given char', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'char');
+        const editor = editorBuilder.withLines('lass a liss b luss c').build();
+        const previousLineIndexes: LineIndexes = {
+          count: 3,
+          highlightCount: 0,
+          indexes: { 0: [0, 7, 15] },
+        };
+
+        // when
+        const result = sut.restrictByChar(editor, previousLineIndexes, 'i');
+
+        // then
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.deepEqual(result, {
+          count: 1,
+          highlightCount: 1,
+          indexes: { 0: [-1, 7, -1] },
+        });
+      });
+    });
+  });
+
+  describe('in regex mode', () => {
+    describe('disableOnlyInitialLetterInRegex is false', () => {
       before(() => {
-        config.finder.onlyInitialLetter = true;
+        editorBuilder = new EditorBuilder();
+
+        sut = new AreaIndexFinder();
+
+        config = new Config();
+        config.finder.disableOnlyInitialLetterInRegex = false;
+        config.finder.charRegexMap = {
+          a: '[aあア亜]',
+          i: '[iいイ医]',
+          l: '[lラレル]',
+          z: '[zザジズ]',
+        };
+        config.finderMode = 'regex';
         sut.refreshConfig(config);
       });
 
-      it('should find values matching initial letter with given char', () => {
-        // given
-        const editor = editorBuilder
-          .withLines('my first row', 'class a {}', 'myAbsoluteMethod')
-          .build();
-
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
-
-        // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 0: [], 1: [6], 2: [] },
-        });
+      after(() => {
+        editorBuilder.restore();
       });
 
-      it('should find values matching initial letter with given uppercase char', () => {
-        // given
-        const editor = editorBuilder.withLines('class a {}').build();
+      describe('findByChar', () => {
+        it('should find nothing with no char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'regex');
+          assert.equal(
+            sut['config'].finder.disableOnlyInitialLetterInRegex,
+            false,
+          );
+          const editor = editorBuilder.withLines('my first row').build();
 
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), '');
 
-        // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 0: [6] },
+          // then
+          assert.equal(sut['config'].finderMode, 'regex');
+          assert.equal(
+            sut['config'].finder.disableOnlyInitialLetterInRegex,
+            false,
+          );
+          assert.deepEqual(result, {
+            count: 0,
+            highlightCount: 0,
+            indexes: { 0: [] },
+          });
         });
-      });
 
-      it('should find values matching initial uppercase letter with given char', () => {
-        // given
-        const editor = editorBuilder.withLines('class A {}').build();
+        describe('when config has onlyInitialLetter true', () => {
+          before(() => {
+            config.finder.onlyInitialLetter = true;
+            config.finderMode = 'regex';
+            sut.refreshConfig(config);
+          });
 
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
+          it('should find values matching initial letter with given char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            const editor = editorBuilder
+              .withLines('my first row', 'class 亜 {}', 'myAbsoluteMethod')
+              .build();
 
-        // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 0: [6] },
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 0: [], 1: [6], 2: [] },
+            });
+          });
+
+          it('should find values matching initial letter with given uppercase char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            const editor = editorBuilder.withLines('class 亜 {}').build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 0: [6] },
+            });
+          });
+
+          it('should skip rows with given area', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            const editor = editorBuilder
+              .withLines('class あ {}', 'class ア {}', 'class 亜 {}')
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 1: [6] },
+            });
+          });
+
+          it('should find values matching initial letter with given char and all config finder pattern', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            const editor = editorBuilder
+              .withLines(`[あ ,ア -亜 .a {A _あ (ア "亜 'a <A [あ ]ア`)
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            assert.deepEqual(result, {
+              count: 11,
+              highlightCount: 0,
+              indexes: { 0: [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31] },
+            });
+          });
+
+          it('should find values matching initial letter with given char with complex example', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            const editor = editorBuilder
+              .withLines(
+                `public あbstrアct class my-亜mazing-clAss (privあte アbsolute: string, public _亜bs: !abs)`,
+                `{ if(_あbs) { return "アbs"; else { return '亜bsolute' } } }`,
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, true);
+            assert.deepEqual(result, {
+              count: 7,
+              highlightCount: 0,
+              indexes: { 0: [7, 25, 48, 74], 1: [6, 21, 42] },
+            });
+          });
         });
-      });
+        describe('when config has onlyInitialLetter false', () => {
+          before(() => {
+            config.finder.onlyInitialLetter = false;
+            config.finderMode = 'regex';
+            sut.refreshConfig(config);
+          });
 
-      it('should skip rows with given area', () => {
-        // given
-        const editor = editorBuilder
-          .withLines('class a {}', 'class a {}', 'class a {}')
-          .build();
+          it('should find values matching any letter with given char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines('my first row', 'clあss ア {}', 'my亜bsoluteMethod')
+              .build();
 
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
 
-        // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 1: [6] },
-        });
-      });
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 3,
+              highlightCount: 0,
+              indexes: { 0: [], 1: [2, 6], 2: [2] },
+            });
+          });
 
-      it('should find values matching initial letter with given char and all config finder pattern', () => {
-        // given
-        const editor = editorBuilder
-          .withLines(`[a ,a -a .a {a _a (a "a 'a <a [a ]a`)
-          .build();
+          it('should find values matching any letter with given uppercase char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder.withLines('myあbsolutemethod').build();
 
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
 
-        // then
-        assert.deepEqual(result, {
-          count: 11,
-          highlightCount: 0,
-          indexes: { 0: [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31] },
-        });
-      });
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 0: [2] },
+            });
+          });
 
-      it('should find values matching initial letter with given char with complex example', () => {
-        // given
-        const editor = editorBuilder
-          .withLines(
-            `public abstract class my-amazing-class (private absolute: string, public _abs: !Abs)`,
-            `{ if(_abs) { return "abs"; else { return 'absolute' } } }`,
-          )
-          .build();
+          it('should skip rows with given area', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                'myあbsoluteMethod',
+                'myアbsoluteMethod',
+                'my亜bsoluteMethod',
+              )
+              .build();
 
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
 
-        // then
-        assert.deepEqual(result, {
-          count: 7,
-          highlightCount: 0,
-          indexes: { 0: [7, 25, 48, 74], 1: [6, 21, 42] },
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 1: [2] },
+            });
+          });
+
+          it('should find values matching any letter with given with complex example', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                `public あbstrアct cl亜ss my-amAzing-clあss (privアte 亜bsolute: string, public _abs: !Abs)`,
+                `{ if(_あbs) { return "アbs"; else { return '亜bsolute' } } }`,
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 13,
+              highlightCount: 0,
+              indexes: {
+                0: [7, 12, 18, 25, 27, 35, 44, 48, 74, 80],
+                1: [6, 21, 42],
+              },
+            });
+          });
+
+          it('should find values matching any letter with given char and multiple jump areas', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                'my first row',
+                'clあss ア {}',
+                'empty',
+                'empty',
+                'empty',
+                'my亜bsoluteMethod',
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(
+              editor,
+              new JumpArea([
+                [0, 1],
+                [5, 5],
+              ]),
+              'a',
+            );
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              false,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 3,
+              highlightCount: 0,
+              indexes: { 0: [], 1: [2, 6], 5: [2] },
+            });
+          });
         });
       });
     });
-
-    describe('when config has onlyInitialLetter false', () => {
+    describe('disableOnlyInitialLetterInRegex is true', () => {
       before(() => {
-        config.finder.onlyInitialLetter = false;
+        editorBuilder = new EditorBuilder();
+
+        sut = new AreaIndexFinder();
+
+        config = new Config();
+        config.finderMode = 'regex';
+        config.finder.disableOnlyInitialLetterInRegex = true;
+        config.finder.charRegexMap = { a: '[aAあア亜]' };
         sut.refreshConfig(config);
       });
 
-      it('should find values matching any letter with given char', () => {
+      after(() => {
+        editorBuilder.restore();
+      });
+
+      describe('findByChar', () => {
+        it('should find nothing with no char', () => {
+          // given
+          assert.equal(sut['config'].finderMode, 'regex');
+          assert.equal(
+            sut['config'].finder.disableOnlyInitialLetterInRegex,
+            true,
+          );
+          const editor = editorBuilder.withLines('my first row').build();
+
+          // when
+          const result = sut.findByChar(editor, new JumpArea([[0, 0]]), '');
+
+          // then
+          assert.equal(sut['config'].finderMode, 'regex');
+          assert.equal(
+            sut['config'].finder.disableOnlyInitialLetterInRegex,
+            true,
+          );
+          assert.deepEqual(result, {
+            count: 0,
+            highlightCount: 0,
+            indexes: { 0: [] },
+          });
+        });
+
+        describe('when config has onlyInitialLetter true', () => {
+          before(() => {
+            config = new Config();
+            config.finder.charRegexMap = { a: '[aAあア亜]' };
+            config.finder.onlyInitialLetter = true;
+            config.finder.disableOnlyInitialLetterInRegex = true;
+            config.finderMode = 'regex';
+            sut.refreshConfig(config);
+          });
+
+          it('should find values matching all letters with given char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines('my first row', 'clあss ア {}', 'my亜bsoluteMethod')
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 3,
+              highlightCount: 0,
+              indexes: { 0: [], 1: [2, 6], 2: [2] },
+            });
+          });
+
+          it('should find values matching initial letter with given uppercase char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder.withLines('clあss ア {}').build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 2,
+              highlightCount: 0,
+              indexes: { 0: [2, 6] },
+            });
+          });
+
+          it('should skip rows with given area', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines('clsあs ア {}', 'cl亜ss a {}', 'clAss あ {}')
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 2,
+              highlightCount: 0,
+              indexes: { 1: [2, 6] },
+            });
+          });
+
+          it('should find values matching all letters with given char with complex example', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                `public あbstrアct class my-亜mazing-clAss (privあte アbsolute: string, public _亜bs: !abs)`,
+                `{ if(_あbs) { return "アbs"; else { return '亜bsolute' } } }`,
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 13,
+              highlightCount: 0,
+              indexes: {
+                0: [7, 12, 18, 25, 27, 35, 44, 48, 74, 80],
+                1: [6, 21, 42],
+              },
+            });
+          });
+        });
+        describe('when config has onlyInitialLetter false', () => {
+          before(() => {
+            config = new Config();
+            config.finder.charRegexMap = { a: '[aAあア亜]' };
+            config.finder.onlyInitialLetter = false;
+            config.finder.disableOnlyInitialLetterInRegex = true;
+            config.finderMode = 'regex';
+            sut.refreshConfig(config);
+          });
+
+          it('should find values matching any letter with given char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines('my first row', 'clあss ア {}', 'my亜bsoluteMethod')
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 3,
+              highlightCount: 0,
+              indexes: { 0: [], 1: [2, 6], 2: [2] },
+            });
+          });
+
+          it('should find values matching any letter with given uppercase char', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder.withLines('myあbsolutemethod').build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 0: [2] },
+            });
+          });
+
+          it('should skip rows with given area', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                'myあbsoluteMethod',
+                'myアbsoluteMethod',
+                'my亜bsoluteMethod',
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 1,
+              highlightCount: 0,
+              indexes: { 1: [2] },
+            });
+          });
+
+          it('should find values matching any letter with given with complex example', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                `public あbstrアct cl亜ss my-amAzing-clあss (privアte 亜bsolute: string, public _abs: !Abs)`,
+                `{ if(_あbs) { return "アbs"; else { return '亜bsolute' } } }`,
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 13,
+              highlightCount: 0,
+              indexes: {
+                0: [7, 12, 18, 25, 27, 35, 44, 48, 74, 80],
+                1: [6, 21, 42],
+              },
+            });
+          });
+
+          it('should find values matching any letter with given char and multiple jump areas', () => {
+            // given
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            const editor = editorBuilder
+              .withLines(
+                'my first row',
+                'clあss ア {}',
+                'empty',
+                'empty',
+                'empty',
+                'my亜bsoluteMethod',
+              )
+              .build();
+
+            // when
+            const result = sut.findByChar(
+              editor,
+              new JumpArea([
+                [0, 1],
+                [5, 5],
+              ]),
+              'a',
+            );
+
+            // then
+            assert.equal(sut['config'].finderMode, 'regex');
+            assert.equal(
+              sut['config'].finder.disableOnlyInitialLetterInRegex,
+              true,
+            );
+            assert.equal(sut['config'].finder.onlyInitialLetter, false);
+            assert.deepEqual(result, {
+              count: 3,
+              highlightCount: 0,
+              indexes: { 0: [], 1: [2, 6], 5: [2] },
+            });
+          });
+        });
+      });
+    });
+    describe('restrictByChar', () => {
+      before(() => {
+        editorBuilder = new EditorBuilder();
+
+        sut = new AreaIndexFinder();
+
+        config = new Config();
+        config.finder.charRegexMap = {
+          a: '[aあア亜]',
+          i: '[iいイ医]',
+          l: '[lラレル]',
+          z: '[zザジズ]',
+        };
+        config.finderMode = 'regex';
+        sut.refreshConfig(config);
+      });
+
+      after(() => {
+        editorBuilder.restore();
+      });
+      it('should restrict nothing with no char', () => {
         // given
-        const editor = editorBuilder
-          .withLines('my first row', 'class a {}', 'myAbsoluteMethod')
-          .build();
+        assert.equal(sut['config'].finderMode, 'regex');
+        const editor = editorBuilder.withLines('my first row').build();
+        const previousLineIndexes: LineIndexes = {
+          count: 1,
+          highlightCount: 0,
+          indexes: { 0: [0] },
+        };
 
         // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 2]]), 'a');
+        const result = sut.restrictByChar(editor, previousLineIndexes, '');
 
         // then
+        assert.equal(sut['config'].finderMode, 'regex');
         assert.deepEqual(result, {
+          count: 0,
+          highlightCount: 1,
+          indexes: { 0: [] },
+        });
+      });
+      it('should not restrict if all indexes have next letter matching the given char', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'regex');
+        const editor = editorBuilder
+          .withLines('class a cラiss b cレuss c')
+          .build();
+        const previousLineIndexes: LineIndexes = {
           count: 3,
           highlightCount: 0,
-          indexes: { 0: [], 1: [2, 6], 2: [2] },
-        });
-      });
-
-      it('should find values matching any letter with given uppercase char', () => {
-        // given
-        const editor = editorBuilder.withLines('myabsolutemethod').build();
+          indexes: { 0: [0, 8, 16] },
+        };
 
         // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'A');
+        const result = sut.restrictByChar(editor, previousLineIndexes, 'l');
 
         // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 0: [2] },
-        });
-      });
-
-      it('should find values matching any uppercase letter with given char', () => {
-        // given
-        const editor = editorBuilder.withLines('myAbsoluteMethod').build();
-
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 0]]), 'a');
-
-        // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 0: [2] },
-        });
-      });
-
-      it('should skip rows with given area', () => {
-        // given
-        const editor = editorBuilder
-          .withLines('myAbsoluteMethod', 'myAbsoluteMethod', 'myAbsoluteMethod')
-          .build();
-
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[1, 1]]), 'a');
-
-        // then
-        assert.deepEqual(result, {
-          count: 1,
-          highlightCount: 0,
-          indexes: { 1: [2] },
-        });
-      });
-
-      it('should find values matching any letter with given with complex example', () => {
-        // given
-        const editor = editorBuilder
-          .withLines(
-            `public abstract class my-amazing-class (private absolute: string, public _abs: !Abs)`,
-            `{ if(_abs) { return "abs"; else { return 'absolute' } } }`,
-          )
-          .build();
-
-        // when
-        const result = sut.findByChar(editor, new JumpArea([[0, 1]]), 'a');
-
-        // then
-        assert.deepEqual(result, {
-          count: 13,
-          highlightCount: 0,
-          indexes: {
-            0: [7, 12, 18, 25, 27, 35, 44, 48, 74, 80],
-            1: [6, 21, 42],
-          },
-        });
-      });
-
-      it('should find values matching any letter with given char and multiple jump areas', () => {
-        // given
-        const editor = editorBuilder
-          .withLines(
-            'my first row',
-            'class a {}',
-            'empty',
-            'empty',
-            'empty',
-            'myAbsoluteMethod',
-          )
-          .build();
-
-        // when
-        const result = sut.findByChar(
-          editor,
-          new JumpArea([
-            [0, 1],
-            [5, 5],
-          ]),
-          'a',
-        );
-
-        // then
+        assert.equal(sut['config'].finderMode, 'regex');
         assert.deepEqual(result, {
           count: 3,
-          highlightCount: 0,
-          indexes: { 0: [], 1: [2, 6], 5: [2] },
+          highlightCount: 1,
+          indexes: { 0: [0, 8, 16] },
         });
       });
-    });
-  });
 
-  describe('restrictByChar', () => {
-    it('should restrict nothing with no char', () => {
-      // given
-      const editor = editorBuilder.withLines('my first row').build();
-      const previousLineIndexes: LineIndexes = {
-        count: 1,
-        highlightCount: 0,
-        indexes: { 0: [0] },
-      };
+      it('should restrict and put -1 as index', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'regex');
+        const editor = editorBuilder.withLines('lass a cliss b luss c').build();
+        const previousLineIndexes: LineIndexes = {
+          count: 1,
+          highlightCount: 0,
+          indexes: { 0: [7] },
+        };
 
-      // when
-      const result = sut.restrictByChar(editor, previousLineIndexes, '');
+        // when
+        const result = sut.restrictByChar(editor, previousLineIndexes, 'z');
 
-      // then
-      assert.deepEqual(result, {
-        count: 0,
-        highlightCount: 1,
-        indexes: { 0: [] },
+        // then
+        assert.equal(sut['config'].finderMode, 'regex');
+        assert.deepEqual(result, {
+          count: 0,
+          highlightCount: 1,
+          indexes: { 0: [-1] },
+        });
       });
-    });
 
-    it('should not restrict if all indexes have next letter matching the given char', () => {
-      // given
-      const editor = editorBuilder.withLines('class a cliss b cluss c').build();
-      const previousLineIndexes: LineIndexes = {
-        count: 3,
-        highlightCount: 0,
-        indexes: { 0: [0, 8, 16] },
-      };
+      it('should restrict to one if only index hass next letter matching the given char', () => {
+        // given
+        assert.equal(sut['config'].finderMode, 'regex');
+        const editor = editorBuilder.withLines('lass a lいss b luss c').build();
+        const previousLineIndexes: LineIndexes = {
+          count: 3,
+          highlightCount: 0,
+          indexes: { 0: [0, 7, 15] },
+        };
 
-      // when
-      const result = sut.restrictByChar(editor, previousLineIndexes, 'l');
+        // when
+        const result = sut.restrictByChar(editor, previousLineIndexes, 'i');
 
-      // then
-      assert.deepEqual(result, {
-        count: 3,
-        highlightCount: 1,
-        indexes: { 0: [0, 8, 16] },
-      });
-    });
-
-    it('should restrict and put -1 as index', () => {
-      // given
-      const editor = editorBuilder.withLines('lass a cliss b luss c').build();
-      const previousLineIndexes: LineIndexes = {
-        count: 1,
-        highlightCount: 0,
-        indexes: { 0: [7] },
-      };
-
-      // when
-      const result = sut.restrictByChar(editor, previousLineIndexes, 'z');
-
-      // then
-      assert.deepEqual(result, {
-        count: 0,
-        highlightCount: 1,
-        indexes: { 0: [-1] },
-      });
-    });
-
-    it('should restrict to one if only index hass next letter matching the given char', () => {
-      // given
-      const editor = editorBuilder.withLines('lass a liss b luss c').build();
-      const previousLineIndexes: LineIndexes = {
-        count: 3,
-        highlightCount: 0,
-        indexes: { 0: [0, 7, 15] },
-      };
-
-      // when
-      const result = sut.restrictByChar(editor, previousLineIndexes, 'i');
-
-      // then
-      assert.deepEqual(result, {
-        count: 1,
-        highlightCount: 1,
-        indexes: { 0: [-1, 7, -1] },
+        // then
+        assert.equal(sut['config'].finderMode, 'regex');
+        assert.deepEqual(result, {
+          count: 1,
+          highlightCount: 1,
+          indexes: { 0: [-1, 7, -1] },
+        });
       });
     });
   });

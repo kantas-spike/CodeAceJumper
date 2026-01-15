@@ -1,4 +1,4 @@
-import { WorkspaceConfiguration } from 'vscode';
+import { WorkspaceConfiguration, workspace } from 'vscode';
 
 import { DimConfig } from './dim-config';
 import { FinderConfig } from './finder-config';
@@ -40,6 +40,24 @@ export class Config {
   public finder = new FinderConfig();
   public dim = new DimConfig();
   public scroll = new ScrollConfig();
+
+  get finderMode(): 'char' | 'regex' {
+    return this.finder.mode;
+  }
+  set finderMode(mode: 'char' | 'regex') {
+    if (this.finder.disableOnlyInitialLetterInRegex) {
+      if (mode === 'regex') {
+        this.finder.onlyInitialLetter = false;
+      } else {
+        const config = workspace.getConfiguration('aceJump');
+        this.finder.onlyInitialLetter = config.get(
+          'finder.onlyInitialLetter',
+          true,
+        );
+      }
+    }
+    this.finder.mode = mode;
+  }
 }
 
 export function buildConfig(cfg: WorkspaceConfiguration) {
@@ -70,6 +88,13 @@ export function buildConfig(cfg: WorkspaceConfiguration) {
     ),
     jumpToLineEndings: cfg.get('finder.jumpToLineEndings', true),
     jumpToEndOfWord: cfg.get('finder.jumpToEndOfWord', false),
+    mode: cfg.get('finder.mode', 'char'),
+    disableOnlyInitialLetterInRegex: cfg.get(
+      'finder.disableOnlyInitialLetterInRegex',
+      true,
+    ),
+    // Mapping from character to regex pattern, default empty object
+    charRegexMap: cfg.get('finder.charRegexMap', {}),
   };
 
   config.dim = {

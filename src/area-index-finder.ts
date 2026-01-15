@@ -21,7 +21,7 @@ export class AreaIndexFinder {
   public findByChar(
     editor: TextEditor,
     area: JumpArea,
-    char: string
+    char: string,
   ): LineIndexes {
     const lineIndexes = new LineIndexes();
 
@@ -47,7 +47,7 @@ export class AreaIndexFinder {
   public restrictByChar(
     editor: TextEditor,
     previousLineIndexes: LineIndexes,
-    char: string
+    char: string,
   ): LineIndexes {
     const lineIndexes = new LineIndexes();
 
@@ -65,7 +65,7 @@ export class AreaIndexFinder {
         line.text,
         previousLineIndexes.indexes[lineIndex],
         char,
-        lineIndexes.highlightCount
+        lineIndexes.highlightCount,
       );
 
       lineIndexes.count += filter(i => i !== -1, indexes).length;
@@ -75,16 +75,12 @@ export class AreaIndexFinder {
     return lineIndexes;
   }
 
-
   /**
    * find indexes for each line
    * @param editor
    * @param area
    */
-  public findByLines(
-    editor: TextEditor,
-    area: JumpArea
-  ): LineIndexes {
+  public findByLines(editor: TextEditor, area: JumpArea): LineIndexes {
     const lineIndexes = new LineIndexes();
 
     for (const areaLine of area.lines) {
@@ -117,35 +113,49 @@ export class AreaIndexFinder {
 
     char = char.toLowerCase();
 
-    const indexes = [];
-    const finderPatternRegex = new RegExp(this.config.finder.pattern);
+    const indexes: number[] = [];
+    // custom regex mapping
+    const customPattern = this.getCharRegexMap()?.[char];
 
+    const finderPatternRegex = new RegExp(this.config.finder.pattern);
     if (
       this.config.finder.onlyInitialLetter &&
       !finderPatternRegex.test(char)
     ) {
-      // current line index
       let index = 0;
-
-      // splitted by the pattern
       const words = line.split(finderPatternRegex);
-
       for (let w = 0; w < words.length; w++) {
-        if (words[w][0] && words[w][0].toLowerCase() === char) {
-          indexes.push(index);
+        if (words[w][0]) {
+          if (customPattern) {
+            const regexp = new RegExp(customPattern, 'i');
+            if (regexp.test(words[w][0])) {
+              indexes.push(index);
+            }
+          } else if (words[w][0].toLowerCase() === char) {
+            indexes.push(index);
+          }
         }
-
-        // increment by whole line and white space
         index += words[w].length + 1;
       }
     } else {
-      const escapedChar = char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regexp = new RegExp(escapedChar, 'gi');
-      let match: RegExpMatchArray | null;
-      // tslint:disable-next-line:no-conditional-assignment
-      while ((match = regexp.exec(line)) !== null) {
-        if (match.index !== undefined) {
-          indexes.push(match.index);
+      if (customPattern) {
+        const regexp = new RegExp(customPattern, 'gi');
+        let match: RegExpMatchArray | null;
+        // tslint:disable-next-line:no-conditional-assignment
+        while ((match = regexp.exec(line)) !== null) {
+          if (match.index !== undefined) {
+            indexes.push(match.index);
+          }
+        }
+      } else {
+        const escapedChar = char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regexp = new RegExp(escapedChar, 'gi');
+        let match: RegExpMatchArray | null;
+        // tslint:disable-next-line:no-conditional-assignment
+        while ((match = regexp.exec(line)) !== null) {
+          if (match.index !== undefined) {
+            indexes.push(match.index);
+          }
         }
       }
     }
@@ -162,7 +172,7 @@ export class AreaIndexFinder {
     line: string,
     previousIndexes: number[],
     char: string,
-    skipCount: number
+    skipCount: number,
   ): number[] {
     if (char.length === 0) {
       return [];
@@ -170,13 +180,31 @@ export class AreaIndexFinder {
 
     char = char.toLowerCase();
 
+    // Use custom regex for the next character if defined
+    const customPattern = this.getCharRegexMap()?.[char];
+    let testFn: (c: string) => boolean;
+    if (customPattern) {
+      try {
+        const re = new RegExp(customPattern, 'i');
+        testFn = c => re.test(c);
+      } catch {
+        testFn = c => c.toLowerCase() === char;
+      }
+    } else {
+      testFn = c => c.toLowerCase() === char;
+    }
+
     return map(charIndex => {
       const letter = line[charIndex + skipCount];
-      if (letter && letter.toLowerCase() === char) {
-        return charIndex;
-      } else {
-        return -1;
-      }
+      return letter && testFn(letter) ? charIndex : -1;
     }, previousIndexes);
+  }
+
+  private getCharRegexMap(): Record<string, string> {
+    if (this.config.finderMode === 'regex') {
+      return this.config.finder.charRegexMap;
+    } else {
+      return {};
+    }
   }
 }

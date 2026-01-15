@@ -130,3 +130,7 @@ added ', " and < in the pattern
 ## [3.3.2]
 
 - fixed [#228](https://github.com/lucax88x/CodeAceJumper/issues/228)
+
+## [3.5.0-beta.1]
+
+- added custom character → regex mapping.

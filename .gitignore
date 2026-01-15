@@ -3,3 +3,8 @@ dist
 node_modules
 .vscode/**
 .vscode-test/**
+*.vsix
+
+# for tools/make-regexmap/
+.venv
+uv.lock

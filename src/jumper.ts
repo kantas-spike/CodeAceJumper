@@ -88,18 +88,21 @@ export class Jumper {
             const lineText = line.text;
             let endOfWordPos = placeholder.character;
             const finderPatternRegex = new RegExp(this.config.finder.pattern);
-            
+
             const punctuationPattern = /[[\](){}<>.,;:!?'"\/\-_=+`~@#$%^&*|\\]/;
-            
+
             // Find the end of the current word
             for (let i = placeholder.character + 1; i <= lineText.length; i++) {
-              if (i === lineText.length || punctuationPattern.test(lineText[i]) || finderPatternRegex.test(lineText[i])) {
+              if (
+                i === lineText.length ||
+                punctuationPattern.test(lineText[i]) ||
+                finderPatternRegex.test(lineText[i])
+              ) {
                 endOfWordPos = i;
                 break;
               }
             }
-    
-            
+
             editor.selection = new Selection(
               new Position(placeholder.line, endOfWordPos),
               new Position(placeholder.line, endOfWordPos),
@@ -170,7 +173,7 @@ export class Jumper {
           if (this.config.finder.jumpToEndOfWord) {
             const line = editor.document.lineAt(placeholder.line);
             const endOfLinePos = line.range.end.character;
-            
+
             editor.selection = new Selection(
               new Position(placeholder.line, endOfLinePos),
               new Position(placeholder.line, endOfLinePos),
@@ -203,6 +206,9 @@ export class Jumper {
 
   public refreshConfig(config: Config) {
     this.config = config;
+    // update finderMode
+    this.config.finderMode = config.finder.mode;
+
     this.placeholderCalculus.refreshConfig(config);
     this.placeHolderDecorator.refreshConfig(config);
     this.jumpAreaFinder.refreshConfig(config);
@@ -226,6 +232,16 @@ export class Jumper {
       default:
         break;
     }
+  };
+
+  public switchFinderMode = () => {
+    const orgMode = this.config.finderMode;
+    this.config.finderMode = orgMode === 'char' ? 'regex' : 'char';
+
+    this.setMessage(
+      `Finder Mode Changed!(${orgMode}->${this.config.finderMode})`,
+      2000,
+    );
   };
 
   private askForInitialChar(jumpKind: JumpKind, editor: TextEditor) {
@@ -594,10 +610,11 @@ export class Jumper {
   }
 
   private setMessage(message: string, timeout: number): Disposable {
+    const mode = `[mode:${this.config.finderMode}]`;
     if (timeout > 0) {
-      return window.setStatusBarMessage(`$(rocket) ${message}`, timeout);
+      return window.setStatusBarMessage(`$(rocket)${mode} ${message}`, timeout);
     } else {
-      return window.setStatusBarMessage(`$(rocket) ${message}`);
+      return window.setStatusBarMessage(`$(rocket)${mode} ${message}`);
     }
   }
 }

@@ -68,8 +68,8 @@ describe('Jumper', () => {
           assert.equal(error.message, 'Empty Value');
 
           scenario.hasStatusBarMessages(
-            '$(rocket) Type',
-            '$(rocket) Empty Value',
+            '$(rocket)[mode:char] Type',
+            '$(rocket)[mode:char] Empty Value',
           );
         }
       });
@@ -87,7 +87,10 @@ describe('Jumper', () => {
           // then
           assert.equal(error.message, 'There are no visible ranges!');
 
-          scenario.hasStatusBarMessages('$(rocket) Type', '$(rocket) Canceled');
+          scenario.hasStatusBarMessages(
+            '$(rocket)[mode:char] Type',
+            '$(rocket)[mode:char] Canceled',
+          );
         }
       });
 
@@ -105,8 +108,8 @@ describe('Jumper', () => {
           assert.equal(error.message, 'No Matches');
 
           scenario.hasStatusBarMessages(
-            '$(rocket) Type',
-            '$(rocket) No Matches',
+            '$(rocket)[mode:char] Type',
+            '$(rocket)[mode:char] No Matches',
           );
         }
       });
@@ -129,7 +132,10 @@ describe('Jumper', () => {
           character: 5,
         });
 
-        scenario.hasStatusBarMessages('$(rocket) Type', '$(rocket) Jumped!');
+        scenario.hasStatusBarMessages(
+          '$(rocket)[mode:char] Type',
+          '$(rocket)[mode:char] Jumped!',
+        );
       });
     });
   });
@@ -155,9 +161,9 @@ describe('Jumper', () => {
         assert.equal(error.message, 'Empty Value');
 
         scenario.hasStatusBarMessages(
-          '$(rocket) Type',
-          '$(rocket) Jump To',
-          '$(rocket) Empty Value',
+          '$(rocket)[mode:char] Type',
+          '$(rocket)[mode:char] Jump To',
+          '$(rocket)[mode:char] Empty Value',
         );
       }
     });
@@ -182,9 +188,9 @@ describe('Jumper', () => {
         assert.equal(error.message, 'No Matches');
 
         scenario.hasStatusBarMessages(
-          '$(rocket) Type',
-          '$(rocket) Jump To',
-          '$(rocket) No Matches',
+          '$(rocket)[mode:char] Type',
+          '$(rocket)[mode:char] Jump To',
+          '$(rocket)[mode:char] No Matches',
         );
       }
     });
@@ -215,9 +221,9 @@ describe('Jumper', () => {
       });
 
       scenario.hasStatusBarMessages(
-        '$(rocket) Type',
-        '$(rocket) Jump To',
-        '$(rocket) Jumped!',
+        '$(rocket)[mode:char] Type',
+        '$(rocket)[mode:char] Jump To',
+        '$(rocket)[mode:char] Jumped!',
       );
     });
 
@@ -249,10 +255,10 @@ describe('Jumper', () => {
       });
 
       scenario.hasStatusBarMessages(
-        '$(rocket) Type',
-        '$(rocket) Jump To',
-        '$(rocket) Jump To',
-        '$(rocket) Jumped!',
+        '$(rocket)[mode:char] Type',
+        '$(rocket)[mode:char] Jump To',
+        '$(rocket)[mode:char] Jump To',
+        '$(rocket)[mode:char] Jumped!',
       );
     });
 
@@ -282,9 +288,9 @@ describe('Jumper', () => {
       });
 
       scenario.hasStatusBarMessages(
-        '$(rocket) Type',
-        '$(rocket) Jump To',
-        '$(rocket) Jumped!',
+        '$(rocket)[mode:char] Type',
+        '$(rocket)[mode:char] Jump To',
+        '$(rocket)[mode:char] Jumped!',
       );
     });
   });
@@ -310,9 +316,9 @@ describe('Jumper', () => {
         assert.equal(error.message, 'Empty Value');
 
         scenario.hasStatusBarMessages(
-          '$(rocket) Type',
-          '$(rocket) Next char',
-          '$(rocket) Empty Value',
+          '$(rocket)[mode:char] Type',
+          '$(rocket)[mode:char] Next char',
+          '$(rocket)[mode:char] Empty Value',
         );
       }
     });
@@ -348,9 +354,9 @@ describe('Jumper', () => {
       });
 
       scenario.hasStatusBarMessages(
-        '$(rocket) Type',
-        '$(rocket) Next char',
-        '$(rocket) Jumped!',
+        '$(rocket)[mode:char] Type',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Jumped!',
       );
     });
 
@@ -391,13 +397,13 @@ describe('Jumper', () => {
       });
 
       scenario.hasStatusBarMessages(
-        '$(rocket) Type',
-        '$(rocket) Next char',
-        '$(rocket) Next char',
-        '$(rocket) Next char',
-        '$(rocket) Next char',
-        '$(rocket) Jump To',
-        '$(rocket) Jumped!',
+        '$(rocket)[mode:char] Type',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Jump To',
+        '$(rocket)[mode:char] Jumped!',
       );
     });
 
@@ -435,11 +441,74 @@ describe('Jumper', () => {
       });
 
       scenario.hasStatusBarMessages(
-        '$(rocket) Type',
-        '$(rocket) Next char',
-        '$(rocket) Next char',
-        '$(rocket) Jumped!',
+        '$(rocket)[mode:char] Type',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Next char',
+        '$(rocket)[mode:char] Jumped!',
       );
+    });
+  });
+
+  describe('switchFinderMode', () => {
+    describe('disableOnlyInitialLetterInRegex is true', () => {
+      it('should toggle mode and update onlyInitialLetter accordingly', async () => {
+        const config = new Config();
+        config.finder.mode = 'char';
+        config.finder.disableOnlyInitialLetterInRegex = true;
+        config.finder.onlyInitialLetter = true;
+
+        sut.refreshConfig(config);
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.equal(
+          sut['config'].finder.disableOnlyInitialLetterInRegex,
+          true,
+        );
+        assert.equal(sut['config'].finder.onlyInitialLetter, true);
+
+        sut.switchFinderMode();
+
+        assert.equal(sut['config'].finderMode, 'regex');
+        assert.equal(sut['config'].finder.onlyInitialLetter, false);
+
+        sut.switchFinderMode();
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.equal(sut['config'].finder.onlyInitialLetter, true);
+
+        scenario.hasStatusBarMessages(
+          `$(rocket)[mode:regex] Finder Mode Changed!(char->regex)`,
+          `$(rocket)[mode:char] Finder Mode Changed!(regex->char)`,
+        );
+      });
+    });
+    describe('disableOnlyInitialLetterInRegex is false', () => {
+      it('should toggle mode and do not update onlyInitialLetter', async () => {
+        const config = new Config();
+        config.finder.mode = 'char';
+        config.finder.disableOnlyInitialLetterInRegex = false;
+        config.finder.onlyInitialLetter = true;
+
+        sut.refreshConfig(config);
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.equal(
+          sut['config'].finder.disableOnlyInitialLetterInRegex,
+          false,
+        );
+        assert.equal(sut['config'].finder.onlyInitialLetter, true);
+
+        sut.switchFinderMode();
+
+        assert.equal(sut['config'].finderMode, 'regex');
+        assert.equal(sut['config'].finder.onlyInitialLetter, true);
+
+        sut.switchFinderMode();
+        assert.equal(sut['config'].finderMode, 'char');
+        assert.equal(sut['config'].finder.onlyInitialLetter, true);
+
+        scenario.hasStatusBarMessages(
+          `$(rocket)[mode:regex] Finder Mode Changed!(char->regex)`,
+          `$(rocket)[mode:char] Finder Mode Changed!(regex->char)`,
+        );
+      });
     });
   });
 });
