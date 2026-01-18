@@ -131,6 +131,7 @@ added ', " and < in the pattern
 
 - fixed [#228](https://github.com/lucax88x/CodeAceJumper/issues/228)
 
-## [3.5.0-beta.1]
+## [3.5.0]
 
-- added custom character → regex mapping.
+- added character → regex mapping.
+- added finderMode(`char` or `regex`).
