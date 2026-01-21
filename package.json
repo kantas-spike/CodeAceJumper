@@ -3,7 +3,7 @@
   "displayName": "Code Ace Jumper",
   "description": "Visual Studio Code Ace Jump",
   "icon": "images/ace-jumper.png",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "publisher": "kantas-spike",
   "homepage": "https://github.com/kantas-spike/CodeAceJumper",
   "license": "https://github.com/kantas-spike/CodeAceJumper/license.md",

@@ -135,3 +135,8 @@ added ', " and < in the pattern
 
 - added character → regex mapping.
 - added finderMode(`char` or `regex`).
+
+## [3.5.1]
+
+- Removed alphabet characters that are not keys from `aceJump.finder.charRegexMap`.
+- Added the script `tools/make-regexmap/check-regexmap.py`.
